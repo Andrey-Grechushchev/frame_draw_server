@@ -42,7 +42,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 # Корень проекта (на уровень выше app/)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -51,22 +50,14 @@ app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 CORS(app)
 
 # Конфигурация
-SECRET_TOKEN = os.getenv("SECRET_TOKEN", "secret123")
+# По умолчанию используем тот же токен, что и в форме, чтобы dev-окружение работало без .env
+SECRET_TOKEN = os.getenv("SECRET_TOKEN", "secure_token_Aspex")
 
-###Для проверки на локальной машине
-# app = Flask(__name__)
-# CORS(app)
-
-# # Конфигурация
-# SECRET_TOKEN = os.getenv("SECRET_TOKEN", "secret123")
-# BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-###
-
-# logger.debug(f"SAVE_DIR = {SAVE_DIR}")
 
 def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, draw_debug_grid):
     """
-    Безопасно запускает процесс генерации PDF-файла в отдельном процессе с поддержкой возврата результата через очередь.
+    Безопасно запускает процесс генерации PDF-файла в отдельном процессе с поддержкой
+    возврата результата через очередь.
 
     Аргументы:
         svg_path (str): Путь к SVG-файлу, который нужно отрендерить.
@@ -77,13 +68,19 @@ def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, d
         draw_debug_grid (bool): Включает отображение вспомогательной сетки (для отладки).
     
     Возвращает:
-        dict: Словарь с результатом выполнения (например, {"status": "OK", "path": "/path/to/file.pdf"} или {"status": "error", "message": "..."}).
+        dict: Словарь с результатом выполнения (например,
+              {"status": "OK", "path": "/path/to/file.pdf"}
+              или {"status": "error", "message": "..."}).
 
     Примечание:
-        Использует multiprocessing для изоляции и предотвращения ошибок, связанных с рендерингом PDF через CairoSVG.
+        Использует multiprocessing для изоляции и предотвращения ошибок,
+        связанных с рендерингом PDF через CairoSVG.
     """
     queue = Queue()
-    process = Process(target=generate_pdf, args=(svg_path, pdf_path, values, disable_svg_debug, save_pdf, draw_debug_grid, queue))
+    process = Process(
+        target=generate_pdf,
+        args=(svg_path, pdf_path, values, disable_svg_debug, save_pdf, draw_debug_grid, queue),
+    )
     process.start()
     process.join()
     # logger.debug(f"Процесс завершился с кодом: {process.exitcode}")
@@ -92,12 +89,15 @@ def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, d
 
 @app.route("/", methods=["GET"])
 def index():
+    """Отдаёт HTML-форму для ввода данных."""
     # Для отладки, чтобы точно видеть, что этот код выполняется
     print(">>> index() called, rendering form.html")
     return render_template("form.html")
 
+
 @app.route("/generate", methods=["POST"])
 def generate_pdf_route():
+    """Маршрут, принимающий данные формы и возвращающий PDF-файл."""
     try:
         # Проверка токена
         auth_header = request.headers.get("Authorization")
@@ -107,7 +107,7 @@ def generate_pdf_route():
         # Получаем все поля из формы
         form_data = request.form.to_dict()
         filename = form_data.get("filename") or DEFAULT_FILENAME
-      
+
         # Обработка checkbox-полей
         for field in checkbox_fields:
             if field in form_data:
@@ -118,14 +118,16 @@ def generate_pdf_route():
                 form_data[field] = False
 
         # logger.debug(form_data)
-        
+
         today = datetime.now().strftime("%Y-%m-%d")
-        SAVE_DIR = os.path.join(BASE_DIR, "static", "downloads", today)
-        os.makedirs(SAVE_DIR, exist_ok=True)
+        save_dir = os.path.join(BASE_DIR, "static", "downloads", today)
+        os.makedirs(save_dir, exist_ok=True)
 
         # Уникальное имя файла
         current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        pdf_path = os.path.join(SAVE_DIR, f"{filename}_{current_time}.pdf")
+        pdf_path = os.path.join(save_dir, f"{filename}_{current_time}.pdf")
+
+
 
         # Генерация
         generate_pdf_safe(
@@ -134,27 +136,24 @@ def generate_pdf_route():
             values=form_data,
             disable_svg_debug=True,
             save_pdf=True,
-            draw_debug_grid=False
+            draw_debug_grid=False,
         )
-
-        # generate_pdf(
-        #     svg_path=None,
-        #     pdf_path=pdf_path,
-        #     values=form_data,
-        #     disable_svg_debug=True,
-        #     save_pdf=True
-        # )
 
         # Проверка существования файла
         if not os.path.exists(pdf_path):
             logger.error(f"Файл PDF не найден: {pdf_path}")
             return jsonify({"error": "Файл не найден"}), 500
-        
+
         # logger.debug(f"pdf_path = {pdf_path}")
 
         # Отдаём файл
-        return send_file(pdf_path, as_attachment=True, download_name=f"{filename}.pdf", mimetype="application/pdf")
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name=f"{filename}.pdf",
+            mimetype="application/pdf",
+        )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.exception("Ошибка при генерации PDF:")
         return jsonify({"error": str(e), "type": type(e).__name__}), 500
