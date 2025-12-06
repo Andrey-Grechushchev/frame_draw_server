@@ -225,6 +225,56 @@ UI/UX особенности:
 </form>
 
 <script>
+  document.getElementById("pdfForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    // Получаем значение из поля формы по имени "filename"
+    const filename = form.elements["filename"].value || "drawing";
+
+    try {
+      const response = await fetch("/generate", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer secure_token_Aspex"
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        // Пытаемся прочитать JSON-ошибку, если сервер её вернул
+        let message = `HTTP ${response.status}`;
+        try {
+          const error = await response.json();
+          if (error && error.error) {
+            message = error.error;
+          }
+        } catch (_) {
+          // если не JSON — оставляем HTTP-код
+        }
+        alert("Ошибка: " + message);
+        return;
+      }
+
+      // Успешный ответ: скачиваем PDF
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+
+      const safeName = filename.replace(/[^a-zA-Zа-яА-Я0-9_\-]/g, "_");
+      link.download = `${safeName}.pdf`;
+
+      link.click();
+      // Можно по желанию освободить URL позже:
+      // URL.revokeObjectURL(link.href);
+    } catch (err) {
+      alert("Ошибка сети или сервера: " + err.message);
+    }
+  });
+</script>
+
+<!-- <script> //Для проверки на локальной машине
     document.getElementById("pdfForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
@@ -254,6 +304,6 @@ UI/UX особенности:
         alert("Ошибка: " + error.error);
       }
     });
-</script>
+</script> -->
 </body>
 </html>

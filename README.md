@@ -78,3 +78,16 @@ python -m PyInstaller --onefile --clean --windowed --noconsole --icon="assets/ic
 ```
 
 venv\Scripts\activate
+
+
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements-server.txt
+
+
+cd /home/aspex/frame_draw_server
+source venv/bin/activate
+
+curl -v http://127.0.0.1:5000/ # проверка работы сервера Flask
+ss -tulpn | grep 5000 # открыт ли порт

@@ -43,13 +43,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-app = Flask(__name__)
+# Корень проекта (на уровень выше app/)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Говорим Flask, где лежат templates/
+app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 CORS(app)
 
 # Конфигурация
 SECRET_TOKEN = os.getenv("SECRET_TOKEN", "secret123")
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+###Для проверки на локальной машине
+# app = Flask(__name__)
+# CORS(app)
+
+# # Конфигурация
+# SECRET_TOKEN = os.getenv("SECRET_TOKEN", "secret123")
+# BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+###
 
 # logger.debug(f"SAVE_DIR = {SAVE_DIR}")
 
