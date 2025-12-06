@@ -30,7 +30,7 @@ Flask-сервер для генерации PDF-чертежей по данн�
 - Не совместим напрямую с Drupal Form API — требует доработки, если интеграция планируется напрямую в CMS.
 """
 
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
 import os
 from datetime import datetime
@@ -88,6 +88,13 @@ def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, d
     process.join()
     # logger.debug(f"Процесс завершился с кодом: {process.exitcode}")
     return queue.get()
+
+
+@app.route("/", methods=["GET"])
+def index():
+    # Для отладки, чтобы точно видеть, что этот код выполняется
+    print(">>> index() called, rendering form.html")
+    return render_template("form.html")
 
 @app.route("/generate", methods=["POST"])
 def generate_pdf_route():
