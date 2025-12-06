@@ -39,3 +39,4 @@ requirements-dev.txt
 gui_app.py
 protected_src/
 utils/utils_gui.py
+assets/libcairo-2.dll
