@@ -2,11 +2,17 @@
 
 from app.server import app
 from flask import jsonify
+from werkzeug.exceptions import HTTPException
 from configs.config_log import logger
 
 # === Глобальный обработчик ошибок ===
 @app.errorhandler(Exception)
 def handle_exception(e):
+    # Если это "нормальная" HTTP-ошибка (404, 405 и т.п.) — отдать её как есть
+    if isinstance(e, HTTPException):
+        return e
+
+    # А всё остальное логируем как реально неожиданные ошибки
     logger.exception("Unhandled exception:")
     response = {
         "error": str(e),
