@@ -1,0 +1,41 @@
+# ===== Python: окружение и мусор =====
+venv/
+.env
+
+__pycache__/
+*.pyc
+*.pyo
+
+# На всякий случай отдельно
+utils/__pycache__/
+
+# ===== Сборки / PyInstaller / exe / zip =====
+build/
+dist/
+build_archives/
+*.spec
+*.exe
+*.zip
+Чертежи на каркасы*/
+
+# ===== Логи и временные файлы =====
+app.log
+templates/app.log
+pyarmor.bug.log
+tree.txt
+
+# ===== Генерируемые файлы чертежей =====
+output/*.pdf
+output/*.svg
+
+# ===== Windows-утилиты =====
+check_pdf_locks/
+
+# ===== Локальные файлы, которые НЕ нужны на сервере =====
+trial_guard.py
+build.py
+project_preparation_guide.txt
+requirements-dev.txt
+gui_app.py
+protected_src/
+utils/utils_gui.py

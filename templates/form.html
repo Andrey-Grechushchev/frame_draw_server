@@ -1,0 +1,259 @@
+<!--
+HTML-форма для генерации PDF-чертежа по данным, введённым пользователем.
+
+Основные функции:
+- Разделена на логические блоки:
+  1. Основная надпись — информация для рамки чертежа (ФИО разработчиков и пр.).
+  2. Технические данные — параметры каркаса и изделия.
+  3. Справочные данные — необязательные размеры.
+  4. Имя файла — имя для сохранения PDF-файла.
+
+UI/UX особенности:
+- Каждый блок обёрнут в <fieldset> с заголовком <legend>.
+- К каждому заголовку добавлен значок 💬 с подсказкой (через атрибут title).
+- В верхней части страницы расположен блок <details>, раскрывающий инструкцию по работе с формой.
+- Кнопка "Сохранить чертёж" отправляет данные формы на сервер Flask.
+
+Функция JavaScript:
+- Отслеживает отправку формы (`submit`).
+- Прерывает стандартную отправку формы (`e.preventDefault()`).
+- Собирает данные с помощью FormData.
+- Извлекает имя файла из поля `filename`.
+- Отправляет запрос `POST` на http://localhost:5000/generate:
+  - Включает заголовок Authorization (Bearer token).
+  - В теле запроса передаёт все данные формы.
+
+Результат:
+- Если сервер отвечает успешно (`response.ok`):
+  - Полученный PDF-файл скачивается автоматически.
+  - Имя файла нормализуется (удаляются неподходящие символы).
+- При ошибке:
+  - Выводится всплывающее окно `alert()` с текстом ошибки.
+
+Безопасность:
+- Поддержка авторизации через Bearer-токен.
+- Форму можно безопасно размещать на отдельном хосте (включён CORS на сервере).
+
+Интеграция:
+- Подходит для тестов и быстрой интеграции.
+- Может быть встроена в CMS или SPA с минимальной адаптацией.
+- Не использует AJAX-фреймворки — только чистый JavaScript.
+
+Ограничения:
+- Не обрабатывает валидацию на клиенте (за исключением стандартной HTML5 required).
+- Нет динамической логики (например, скрытие полей, пересчёты).
+- Форма жёстко связана с backend API по адресу `http://localhost:5000`.
+
+Для продакшена:
+- Заменить URL на боевой адрес сервера.
+- Использовать переменные окружения (например, через конфигурацию JavaScript).
+- Подумать об аутентификации пользователя, если нужно ограничить доступ.
+-->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Форма ввода</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f5f5; padding: 20px; }
+    form { background: #fff; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; }
+    fieldset { margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; padding: 15px; }
+    legend { font-weight: bold; }
+    label { display: block; margin: 10px 0 5px; }
+    input, select { width: 100%; padding: 5px; }
+    .checkbox-label { display: flex; align-items: center; gap: 10px; }
+    button { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <details style="max-width: 600px; margin: auto; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px;">
+  <summary style="font-size: 18px; font-weight: bold; cursor: pointer;">ℹ️ Как пользоваться формой</summary>
+  <div style="margin-top: 10px;">
+    <p>1. Заполните все обязательные поля в разделах:</p>
+    <ul>
+      <li><strong>Основная надпись</strong> — для информации о проектировщике и утверждающем.</li>
+      <li><strong>Технические данные</strong> — параметры каркаса и конструктивных элементов.</li>
+      <li><strong>Справочные данные</strong> — дополнительные размеры.</li>
+      <li><strong>Имя файла</strong> — как сохранить файл.</li>
+    </ul>
+    <p>2. Нажмите кнопку <strong>«Сохранить чертёж»</strong>.</p>
+    <p>3. После обработки запроса автоматически скачается PDF-файл с чертежом.</p>
+    <p>🔐 Доступ защищён — используется токен авторизации. Если его нет или он неверный, произойдёт ошибка доступа.</p>
+    <p>📄 Файл сохраняется на сервере и передаётся вам как загрузка. Если возникает ошибка — проверьте заполнение полей.</p>
+  </div>
+</details>
+
+
+<form id="pdfForm" method="post">
+
+  <fieldset>
+    <legend>Основная надпись
+      <span class="info-icon" title="Данные, которые будут отображены в основной надписи на чертеже. Заполните фамилии ответственных участников.">💬</span>
+    </legend>
+    <label>Наименование:</label>
+    <input type="text" name="component_identification" value="Каркас" required>
+
+    <label>Разработал:</label>
+    <input type="text" name="designer" value="" >
+
+    <label>Проверил:</label>
+    <input type="text" name="scrutineer" value="" >
+
+    <label>Тех. контр:</label>
+    <input type="text" name="supervisor" value="" >
+
+    <label>Норм. контр:</label>
+    <input type="text" name="document_controller" value="" >
+
+    <label>Утвердил:</label>
+    <input type="text" name="confirmer" value="" >
+  </fieldset>
+
+  <fieldset>
+    <legend>Технические данные
+      <span class="info-icon" title="Основные параметры каркаса. Эти значения влияют на чертёж и расчёты. Заполняются обязательно.">💬</span>
+    </legend>
+
+    <label>Кол-во частей каркаса, шт.:</label>
+    <select name="frame_parts_count">
+      <option value="1" selected>1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+
+    <label>Длина каркаса, мм:</label>
+    <input type="number" step="any" name="frame_length_mm" value="4000" required>
+
+    <label>Диаметр каркаса, мм:</label>
+    <input type="number" step="any" name="frame_diameter_mm" value="110" required>
+
+    <label>Диаметр продольного прутка, мм:</label>
+    <input type="number" step="any" name="longitudinal_rod_diameter_mm" value="3" required>
+
+    <label>Кол-во прутков, шт.:</label>
+    <select name="rod_count">
+      <option value="6" selected>6</option>
+      <option value="8">8</option>
+      <option value="10">10</option>
+      <option value="12">12</option>
+      <option value="14">14</option>
+      <option value="16">16</option>
+      <option value="18">18</option>
+      <option value="20">20</option>
+      <option value="22">22</option>
+      <option value="24">24</option>
+    </select>
+
+    <label>Диаметр проволоки кольца, мм:</label>
+    <input type="number" step="any" name="ring_wire_diameter_mm" value="4" required>
+
+    <div class="checkbox-label">
+      <input type="checkbox" name="bottom_presence" checked>
+      <label for="bottom_presence">Наличие донышка</label>
+    </div>
+
+    <label>Толщина донышка, мм:</label>
+    <input type="number" step="any" name="bottom_thickness_mm" value="1" required>
+
+    <div class="checkbox-label">
+      <input type="checkbox" name="venturi_presence">
+      <label for="venturi_presence">Наличие Вентури</label>
+    </div>
+
+    <label>Диаметр Вентури, мм:</label>
+    <input type="number" step="any" name="venturi_diameter_mm" value="134" required>
+
+    <label>Толщина Вентури, мм:</label>
+    <input type="number" step="any" name="venturi_thickness_mm" value="1" required>
+
+    <label>Материал проволоки:</label>
+    <input type="text" name="wire_material" value="08Г2С" required>
+
+    <label>Тип замка:</label>
+    <select name="lock_type">
+      <option value="коготь">коготь</option>
+      <option value="Без замка" selected>Без замка</option>
+    </select>
+
+    <label>Тип покрытия:</label>
+    <select name="coating_type">
+      <option value="Окраска">Окраска</option>
+      <option value="Без окраски" selected>Без окраски</option>
+      <option value="Оцинковка">Оцинковка</option>
+    </select>
+
+    <label>Высота донышка, мм:</label>
+    <input type="number" step="any" name="bottom_length_mm" value="18" required>
+
+    <div class="checkbox-label">
+    <input type="checkbox" name="neck_ring_inner_diameter_presence">
+    <label for="neck_ring_inner_diameter_presence">Внутр. диам. кодльца горловины</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>
+      Справочные данные
+      <span class="info-icon" title="Необязательные параметры. Используются только для информации и не отображаются на чертеже, если оставить пустыми.">💬</span>
+    </legend>
+
+    <label>Длина горловины, мм:</label>
+    <input type="text" name="neck_length" value="220">
+    
+    <label>Шаг между кольцами, мм</label>
+    <input type="text" name="distance_between_rings" value="200">
+
+    <label>Расстояние от последнего кольца до донышка, мм:</label>
+    <input type="text" name="last_ring_to_bottom_length" value="">
+
+    <label>Диаметр донышка:</label>
+    <input type="text" name="bottom_diameter" value="100">
+  </fieldset>  
+
+  <fieldset>
+    <legend>Имя файла
+     <span class="info-icon" title="Имя файла, с которым будет сохранён чертёж. Без расширения. Можно оставить по умолчанию.">💬</span> 
+    </legend>
+
+    <label>Имя файла (без расширения):</label>
+    <input type="text" name="filename" value="drawing" required>
+  </fieldset>
+
+  <button type="submit">Сохранить чертёж</button>
+</form>
+
+<script>
+    document.getElementById("pdfForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      // Получаем значение из поля формы по имени "filename"
+      const filename = e.target.elements["filename"].value || "drawing";
+
+      const response = await fetch("http://localhost:5000/generate", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer secure_token_Aspex"
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+
+        const safeName = filename.replace(/[^a-zA-Zа-яА-Я0-9_\-]/g, "_");
+        link.download = `${safeName}.pdf`;
+
+        link.click();
+      } else {
+        const error = await response.json();
+        alert("Ошибка: " + error.error);
+      }
+    });
+</script>
+</body>
+</html>

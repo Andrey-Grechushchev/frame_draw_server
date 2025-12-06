@@ -1,0 +1,12 @@
+python-dotenv==1.1.0
+Flask==3.1.1
+flask-cors==6.0.0
+CairoSVG==2.7.1
+svgwrite==1.4.3
+pyinstaller==6.13.0
+numpy==2.2.5
+
+# Для GUI в Linux нужно установить python3-tk вручную:
+# sudo apt install python3-tk
+
+
