@@ -91,3 +91,23 @@ source venv/bin/activate
 
 curl -v http://127.0.0.1:5000/ # проверка работы сервера Flask
 ss -tulpn | grep 5000 # открыт ли порт
+
+Теперь, когда sudo работает, твой стандартный цикл такой:
+Локально (Windows):
+git add .
+git commit -m "Описание изменений"
+git push
+На сервере под aspex:
+ssh aspex@31.207.75.93
+cd /home/aspex/frame_draw_server
+git pull
+# если менялся requirements-server.txt:
+source venv/bin/activate
+pip install -r requirements-server.txt
+sudo systemctl restart frame_draw_server.service
+sudo systemctl status frame_draw_server.service
+
+Проверка:
+на сервере: curl -i http://127.0.0.1:5000/
+из браузера: http://31.207.75.93:5000/
+Если хочешь, дальше можем сделать небольшой deploy.sh, чтобы на сервере всё свелось к одной команде типа ./deploy.sh.

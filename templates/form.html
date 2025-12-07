@@ -224,54 +224,52 @@ UI/UX особенности:
     <button type="submit">Сохранить чертёж</button>
   </form>
 
-  <script>
-    document.getElementById("pdfForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
+<script>
+  // Токен приходит из Flask
+  const API_TOKEN = "{{ api_token }}";
 
-      // Получаем значение из поля формы по имени "filename"
-      const filename = form.elements["filename"].value || "drawing";
+  document.getElementById("pdfForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
 
-      try {
-        const response = await fetch("/generate", {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer secure_token_Aspex"
-          },
-          body: formData
-        });
+    const filename = form.elements["filename"].value || "drawing";
 
-        if (!response.ok) {
-          // Пытаемся прочитать JSON-ошибку, если сервер её вернул
-          let message = `HTTP ${response.status}`;
-          try {
-            const error = await response.json();
-            if (error && error.error) {
-              message = error.error;
-            }
-          } catch (_) {
-            // если не JSON — оставляем HTTP-код
+    try {
+      const response = await fetch("/generate", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + API_TOKEN
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        let message = `HTTP ${response.status}`;
+        try {
+          const error = await response.json();
+          if (error && error.error) {
+            message = error.error;
           }
-          alert("Ошибка: " + message);
-          return;
-        }
-
-        // Успешный ответ: скачиваем PDF
-        const blob = await response.blob();
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-
-        const safeName = filename.replace(/[^a-zA-Zа-яА-Я0-9_\-]/g, "_");
-        link.download = `${safeName}.pdf`;
-
-        link.click();
-        // URL.revokeObjectURL(link.href); // можно вызвать позже
-      } catch (err) {
-        alert("Ошибка сети или сервера: " + err.message);
+        } catch (_) {}
+        alert("Ошибка: " + message);
+        return;
       }
-    });
-  </script>
+
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+
+      const safeName = filename.replace(/[^a-zA-Zа-яА-Я0-9_\-]/g, "_");
+      link.download = `${safeName}.pdf`;
+      link.click();
+    } catch (err) {
+      alert("Ошибка сети или сервера: " + err.message);
+    }
+  });
+</script>
+
+
 
   <!-- Вариант для локальной отладки (если сервер слушает localhost:5000)
   <script>

@@ -92,7 +92,7 @@ def index():
     """Отдаёт HTML-форму для ввода данных."""
     # Для отладки, чтобы точно видеть, что этот код выполняется
     print(">>> index() called, rendering form.html")
-    return render_template("form.html")
+    return render_template("form.html", api_token=SECRET_TOKEN)
 
 
 @app.route("/generate", methods=["POST"])
