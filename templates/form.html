@@ -57,18 +57,21 @@ UI/UX особенности:
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: sans-serif; background: #f5f5f5; padding: 20px; }
-    form { background: #fff; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; }
+    form { background: #fff; padding: 20px; border-radius: 8px; max-width: 700px; margin: auto; }
     fieldset { margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; padding: 15px; }
     legend { font-weight: bold; }
     label { display: block; margin: 10px 0 5px; }
-    input, select { width: 100%; padding: 5px; }
-    .checkbox-label { display: flex; align-items: center; gap: 10px; }
+    input, select { width: 100%; padding: 5px; box-sizing: border-box; }
+    .checkbox-label { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .inline-group { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .inline-group label { margin: 0; }
     button { padding: 10px 20px; font-size: 16px; }
+    .disabled-like { opacity: 0.6; }
   </style>
 </head>
 <body>
 
-  <details style="max-width: 600px; margin: auto; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px;">
+  <details style="max-width: 700px; margin: auto; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px;">
     <summary style="font-size: 18px; font-weight: bold; cursor: pointer;">ℹ️ Как пользоваться формой</summary>
     <div style="margin-top: 10px;">
       <p>1. Заполните все обязательные поля в разделах:</p>
@@ -87,11 +90,12 @@ UI/UX особенности:
 
 
   <form id="pdfForm" method="post">
-
+    <!-- ОСНОВНАЯ НАДПИСЬ -->
     <fieldset>
       <legend>Основная надпись
         <span class="info-icon" title="Данные, которые будут отображены в основной надписи на чертеже. Заполните фамилии ответственных участников.">💬</span>
       </legend>
+
       <label>Наименование:</label>
       <input type="text" name="component_identification" value="Каркас" required>
 
@@ -111,6 +115,7 @@ UI/UX особенности:
       <input type="text" name="confirmer" value="">
     </fieldset>
 
+    <!-- ТЕХНИЧЕСКИЕ ДАННЫЕ -->
     <fieldset>
       <legend>Технические данные
         <span class="info-icon" title="Основные параметры каркаса. Эти значения влияют на чертёж и расчёты. Заполняются обязательно.">💬</span>
@@ -124,7 +129,7 @@ UI/UX особенности:
       </select>
 
       <label>Длина каркаса, мм:</label>
-      <input type="number" step="any" name="frame_length_mm" value="4000" required>
+      <input type="number" step="any" name="frame_length_mm" value="3000" required>
 
       <label>Диаметр каркаса, мм:</label>
       <input type="number" step="any" name="frame_diameter_mm" value="110" required>
@@ -150,15 +155,18 @@ UI/UX особенности:
       <input type="number" step="any" name="ring_wire_diameter_mm" value="4" required>
 
       <div class="checkbox-label">
-        <input type="checkbox" name="bottom_presence" checked>
+        <input type="checkbox" id="bottom_presence" name="bottom_presence" checked>
         <label for="bottom_presence">Наличие донышка</label>
       </div>
 
       <label>Толщина донышка, мм:</label>
       <input type="number" step="any" name="bottom_thickness_mm" value="1" required>
 
+      <label>Высота донышка, мм:</label>
+      <input type="number" step="any" name="bottom_length_mm" value="18" required>
+
       <div class="checkbox-label">
-        <input type="checkbox" name="venturi_presence">
+        <input type="checkbox" id="venturi_presence" name="venturi_presence">
         <label for="venturi_presence">Наличие Вентури</label>
       </div>
 
@@ -169,49 +177,68 @@ UI/UX особенности:
       <input type="number" step="any" name="venturi_thickness_mm" value="1" required>
 
       <label>Материал проволоки:</label>
-      <input type="text" name="wire_material" value="08Г2С" required>
+      <select name="wire_material">
+        <option value="09Г2С" selected>09Г2С</option>
+        <option value="Св-08А">Св-08А</option>
+        <option value="12Х18Н9">12Х18Н9</option>
+        <option value="12Х18Н10Т">12Х18Н10Т</option>
+        <option value="08Х18Н10">08Х18Н10</option>
+      </select>
 
       <label>Тип замка:</label>
       <select name="lock_type">
-        <option value="коготь">коготь</option>
         <option value="Без замка" selected>Без замка</option>
+        <option value="Коготь">Коготь</option>
       </select>
 
       <label>Тип покрытия:</label>
       <select name="coating_type">
-        <option value="Окраска">Окраска</option>
         <option value="Без окраски" selected>Без окраски</option>
+        <option value="Окраска">Окраска</option>
         <option value="Оцинковка">Оцинковка</option>
       </select>
 
-      <label>Высота донышка, мм:</label>
-      <input type="number" step="any" name="bottom_length_mm" value="18" required>
+      <label>Тип оголовка:</label>
+      <select name="head_type">
+        <option value="Раструб" selected>Раструб</option>
+        <option value="Воротник">Воротник</option>
+      </select>
 
       <div class="checkbox-label">
-        <input type="checkbox" name="neck_ring_inner_diameter_presence">
-        <label for="neck_ring_inner_diameter_presence">Внутр. диам. кодльца горловины</label>
+        <input type="checkbox" id="neck_ring_inner_diameter_presence" name="neck_ring_inner_diameter_presence">
+        <label for="neck_ring_inner_diameter_presence">Внутр. диаметр кольца раструба (наносить размер)</label>
       </div>
     </fieldset>
 
+    <!-- СПРАВОЧНЫЕ ДАННЫЕ -->
     <fieldset>
       <legend>
         Справочные данные
-        <span class="info-icon" title="Необязательные параметры. Используются только для информации и не отображаются на чертеже, если оставить пустыми.">💬</span>
+        <span class="info-icon" title="Необязательные параметры. Используются только для информации и могут не отображаться на чертеже.">💬</span>
       </legend>
 
+      <div class="inline-group">
+        <input type="checkbox" id="neck_length_presence" name="neck_length_presence" checked>
+        <label for="neck_length_presence">Показывать длину горловины на чертеже</label>
+      </div>
       <label>Длина горловины, мм:</label>
-      <input type="text" name="neck_length" value="220">
+      <input type="number" step="any" name="neck_length" value="220">
 
-      <label>Шаг между кольцами, мм</label>
-      <input type="text" name="distance_between_rings" value="200">
+      <label>Шаг между кольцами, мм:</label>
+      <input type="number" step="any" name="distance_between_rings" value="193">
 
+      <div class="inline-group">
+        <input type="checkbox" id="last_ring_to_bottom_length_presence" name="last_ring_to_bottom_length_presence">
+        <label for="last_ring_to_bottom_length_presence">Показывать расстояние от последнего кольца до донышка</label>
+      </div>
       <label>Расстояние от последнего кольца до донышка, мм:</label>
-      <input type="text" name="last_ring_to_bottom_length" value="">
+      <input type="number" step="any" name="last_ring_to_bottom_length" value="78">
 
-      <label>Диаметр донышка:</label>
-      <input type="text" name="bottom_diameter" value="100">
+      <label>Диаметр донышка, мм:</label>
+      <input type="number" step="any" name="bottom_diameter" value="106">
     </fieldset>
 
+    <!-- ИМЯ ФАЙЛА -->
     <fieldset>
       <legend>Имя файла
         <span class="info-icon" title="Имя файла, с которым будет сохранён чертёж. Без расширения. Можно оставить по умолчанию.">💬</span> 
@@ -223,6 +250,16 @@ UI/UX особенности:
 
     <button type="submit">Сохранить чертёж</button>
   </form>
+
+
+
+
+
+
+
+
+
+
 
 <script>
   // Токен приходит из Flask
@@ -267,6 +304,212 @@ UI/UX особенности:
       alert("Ошибка сети или сервера: " + err.message);
     }
   });
+
+      // === Динамика формы как в GUI ===
+    (function initDynamicLogic() {
+      // Утилита: безопасное получение элемента по имени
+      const byName = (name) => document.querySelector(`[name="${name}"]`);
+
+      const frameParts = byName("frame_parts_count");
+      const lockType = byName("lock_type");
+      const wireMaterial = byName("wire_material");
+      const coatingType = byName("coating_type");
+      const bottomPresence = byName("bottom_presence");
+      const bottomThickness = byName("bottom_thickness_mm");
+      const bottomLength = byName("bottom_length_mm");
+      const bottomDiameter = byName("bottom_diameter");
+      const venturiPresence = byName("venturi_presence");
+      const venturiDiameter = byName("venturi_diameter_mm");
+      const venturiThickness = byName("venturi_thickness_mm");
+      const neckRingPresence = byName("neck_ring_inner_diameter_presence");
+      const headType = byName("head_type");
+      const neckLengthPresence = byName("neck_length_presence");
+      const neckLength = byName("neck_length");
+      const lastRingPresence = byName("last_ring_to_bottom_length_presence");
+      const lastRing = byName("last_ring_to_bottom_length");
+
+      // Помощник для "логического disabled", чтобы поля всё равно отправлялись
+      function setDisabledLike(el, disabled) {
+        if (!el) return;
+        el.readOnly = disabled && el.tagName === "INPUT";
+        if (el.tagName === "SELECT") {
+          el.dataset.disabledLike = disabled ? "1" : "0";
+        }
+        if (disabled) {
+          el.classList.add("disabled-like");
+        } else {
+          el.classList.remove("disabled-like");
+        }
+      }
+
+      // Если у select стоит data-disabled-like=1 — не даём менять значение
+      document.addEventListener("change", (e) => {
+        const el = e.target;
+        if (el.tagName === "SELECT" && el.dataset.disabledLike === "1") {
+          // откатываем значение назад
+          if (el.dataset.prevValue != null) {
+            el.value = el.dataset.prevValue;
+          }
+        } else if (el.tagName === "SELECT") {
+          el.dataset.prevValue = el.value;
+        }
+      });
+
+      // --- 1. Автоподстановка замка по количеству частей + сторож ---
+      function updateLockTypeByFrameParts() {
+        if (!frameParts || !lockType) return;
+        const v = frameParts.value;
+        const map = {
+          "1": "Без замка",
+          "2": "Коготь",
+          "3": "Коготь"
+        };
+        const mapped = map[v];
+        if (mapped && Array.from(lockType.options).some(o => o.value === mapped)) {
+          lockType.value = mapped;
+        }
+        // При 1 части логически блокируем выбор замка
+        const disable = (v === "1");
+        setDisabledLike(lockType, disable);
+      }
+
+      function guardLockType() {
+        if (!frameParts || !lockType) return;
+        const parts = frameParts.value;
+        const lock = lockType.value;
+        if ((parts === "2" || parts === "3") && lock === "Без замка") {
+          alert(
+            "Для каркаса из нескольких частей замок обязателен.\n" +
+            "Тип замка будет автоматически изменён."
+          );
+          lockType.value = "Коготь";
+        }
+      }
+
+      // --- 2. Автоподстановка покрытия по материалу + сторож ---
+      const stainlessList = ["12Х18Н9", "12Х18Н10Т", "08Х18Н10"];
+
+      function updateCoatingByMaterial() {
+        if (!wireMaterial || !coatingType) return;
+        const wm = wireMaterial.value;
+        if (stainlessList.includes(wm)) {
+          coatingType.value = "Без окраски";
+        }
+      }
+
+      function guardCoating() {
+        if (!wireMaterial || !coatingType) return;
+        const wm = wireMaterial.value;
+        const coat = coatingType.value;
+        if (stainlessList.includes(wm) && (coat === "Окраска" || coat === "Оцинковка")) {
+          alert(
+            "Для каркаса из нержавейки покрытие и окрашивание не используется.\n" +
+            "Тип покрытия будет автоматически изменён."
+          );
+          coatingType.value = "Без окраски";
+        }
+      }
+
+      // --- 3. Зависимости от наличия донышка ---
+      function updateBottomFields() {
+        if (!bottomPresence) return;
+        const noBottom = !bottomPresence.checked;
+        setDisabledLike(bottomThickness, noBottom);
+        setDisabledLike(bottomLength, noBottom);
+        setDisabledLike(bottomDiameter, noBottom);
+      }
+
+      // --- 4. Зависимости от наличия Вентури ---
+      function updateVenturiFields() {
+        if (!venturiPresence) return;
+        const hasVenturi = venturiPresence.checked;
+        // Если Вентури нет — гасим его размеры
+        setDisabledLike(venturiDiameter, !hasVenturi);
+        setDisabledLike(venturiThickness, !hasVenturi);
+        // Если Вентури есть — гасим чекбокс внутреннего диаметра кольца раструба
+        if (neckRingPresence) {
+          setDisabledLike(neckRingPresence, hasVenturi);
+          if (hasVenturi) {
+            neckRingPresence.checked = false;
+          }
+        }
+      }
+
+      // --- 5. Зависимость neck_ring_inner_diameter_presence от head_type ---
+      function updateNeckRingByHeadType() {
+        if (!headType || !neckRingPresence) return;
+        const type = headType.value;
+        const disable = (type !== "Раструб");
+        setDisabledLike(neckRingPresence, disable);
+        if (disable) {
+          neckRingPresence.checked = false;
+        }
+      }
+
+      // --- 6. Справочные размеры: наличие / отсутствие ---
+      function updateNeckLengthField() {
+        if (!neckLengthPresence || !neckLength) return;
+        const enabled = neckLengthPresence.checked;
+        setDisabledLike(neckLength, !enabled);
+      }
+
+      function updateLastRingField() {
+        if (!lastRingPresence || !lastRing) return;
+        const enabled = lastRingPresence.checked;
+        setDisabledLike(lastRing, !enabled);
+      }
+
+      // --- Подписка на события ---
+      if (frameParts) {
+        frameParts.addEventListener("change", () => {
+          updateLockTypeByFrameParts();
+          guardLockType();
+        });
+      }
+      if (lockType) {
+        lockType.addEventListener("change", guardLockType);
+      }
+
+      if (wireMaterial) {
+        wireMaterial.addEventListener("change", () => {
+          updateCoatingByMaterial();
+          guardCoating();
+        });
+      }
+      if (coatingType) {
+        coatingType.addEventListener("change", guardCoating);
+      }
+
+      if (bottomPresence) {
+        bottomPresence.addEventListener("change", updateBottomFields);
+      }
+      if (venturiPresence) {
+        venturiPresence.addEventListener("change", () => {
+          updateVenturiFields();
+        });
+      }
+      if (headType) {
+        headType.addEventListener("change", () => {
+          updateNeckRingByHeadType();
+        });
+      }
+      if (neckLengthPresence) {
+        neckLengthPresence.addEventListener("change", updateNeckLengthField);
+      }
+      if (lastRingPresence) {
+        lastRingPresence.addEventListener("change", updateLastRingField);
+      }
+
+      // --- Инициализация при загрузке страницы ---
+      updateLockTypeByFrameParts();
+      updateCoatingByMaterial();
+      guardCoating();
+      updateBottomFields();
+      updateVenturiFields();
+      updateNeckRingByHeadType();
+      updateNeckLengthField();
+      updateLastRingField();
+    })();
 </script>
 
 
