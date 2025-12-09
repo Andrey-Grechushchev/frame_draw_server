@@ -4,6 +4,7 @@
 import numpy as np
 from math import atan2, degrees, radians, cos, sin
 from utils.utils_core import mm_to_pt, pt_to_mm
+from drawers.drawer_shapes import HatchPattern
 from configs.config_log import logger
 
 def add_arrow_markers(dwg):
@@ -32,13 +33,27 @@ def add_arrow_markers(dwg):
     dwg.defs.add(marker)
 
 
-
-    marker = dwg.marker(id='arrow_section_end',
-                        insert=(7, 1.75),
-                        size=(7, 3.5),
-                        viewBox="0 0 7 3.5",
+    dim_slash = 10
+    marker = dwg.marker(id='arrow_slash',
+                        insert=(dim_slash/2, dim_slash/2),
+                        size=(dim_slash, dim_slash),
+                        viewBox=f"0 0 {dim_slash} {dim_slash}",
                         orient="auto",
                         markerUnits="strokeWidth")
+
+    # Косая черта
+    # slash = dwg.path(d="M 0 0 L 7 1.75 L 0 3.5 Z", fill="black")
+    slash = dwg.line(start=(0,dim_slash), end=(dim_slash,0), stroke="black", stroke_width=1, stroke_linecap="round")
+    marker.add(slash)
+    dwg.defs.add(marker)
+
+
+    marker = dwg.marker(id='arrow_section_end',
+                    insert=(7, 1.75),
+                    size=(7, 3.5),
+                    viewBox="0 0 7 3.5",
+                    orient="auto",
+                    markerUnits="strokeWidth")
 
     # Простая стрелка
     arrow = dwg.path(d="M 0 0 L 7 1.75 L 0 3.5 Z", fill="black")
@@ -46,9 +61,9 @@ def add_arrow_markers(dwg):
     dwg.defs.add(marker)
 
     
-# Доавляем линейный размер. Строго слева направа.
+# Добавляем линейный размер. Строго слева направа.
 def draw_dimension(dwg, container, pt1, pt2, offset=10, value=None, scale_dim = 1, text_offset=-7, 
-                   line_stroke='black', line_width=1, font_size=5,
+                   line_stroke='black', line_width=1, font_size=5, scale_dim_line_offset=1,
                     marker_id='arrow_end', show_diameter_symbol=False, ref=False):
     if value != "":
         x1, y1 = pt1
@@ -63,7 +78,7 @@ def draw_dimension(dwg, container, pt1, pt2, offset=10, value=None, scale_dim = 
         
 
         ext = 5 if offset > 0 else -5 # длина выступа выносных линий
-
+        ext /= scale_dim_line_offset # масштабируем кончики выносных линий
         # Вектор направления
         dx = x2 - x1
         dy = y2 - y1
@@ -197,4 +212,47 @@ def draw_note(dwg):
         text.add(tspan)
 
     dwg.add(text)
+
+# Создаем паттерн штриховки
+def add_hatch_patterns(dwg):
+    
+    hatch1 = HatchPattern(
+        id='hatch30',
+        angle=30,
+        spacing=1.5,
+        stroke='black',
+        stroke_width=0.2 
+    )
+    pattern1 = hatch1.generate(dwg)
+    dwg.defs.add(pattern1)
+
+    hatch2 = HatchPattern(
+        id='hatch120',
+        angle=120,
+        spacing=0.5,
+        stroke='black',
+        stroke_width=0.2 
+    )
+    pattern2 = hatch2.generate(dwg)
+    dwg.defs.add(pattern2) # нужен чтобы сработала строчка по id fill=f"url(#{hatch.id})")
+
+    hatch3 = HatchPattern(
+        id='hatch_1.5',
+        angle=0,
+        spacing=1.5,
+        stroke='black',
+        stroke_width=0.2 
+    )
+    pattern3 = hatch3.generate(dwg)
+    dwg.defs.add(pattern3)
+
+    hatch4 = HatchPattern(
+        id='hatch_0.5',
+        angle=0,
+        spacing=0.5,
+        stroke='black',
+        stroke_width=0.2 
+    )
+    pattern4 = hatch4.generate(dwg)
+    dwg.defs.add(pattern4)
         

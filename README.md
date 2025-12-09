@@ -104,6 +104,7 @@ git pull
 # если менялся requirements-server.txt:
 source venv/bin/activate
 pip install -r requirements-server.txt
+
 sudo systemctl restart frame_draw_server.service
 sudo systemctl status frame_draw_server.service
 

@@ -4,8 +4,8 @@
 import svgwrite
 from configs.config import (DEFAULT_NECK_LENGTH, NECK_RING_DIFF_DEFAULT, DEFAULT_BOTTOM_DIAMETER_PRESENCE, bottom_thickness_mm, 
     venturi_height_mm, venturi_diameter_1_mm, venturi_diameter_2_mm, overlap_lock, support_lock_ring)
-from drawers.drawer_shapes import Line, Circle, Rect, Ellipse, Polyline, Polygon, Text, ThickPolyline, HatchPattern
-from drawers.drawer_dimenstions import draw_dimension, add_arrow_markers, draw_diameter_dimension
+from drawers.drawer_shapes import Line, Circle, Rect, Ellipse, Polyline, Polygon, Text, ThickPolyline
+from drawers.drawer_dimenstions import draw_dimension, draw_diameter_dimension 
 from frame_calculations import calculate_frame_length_match
 from math import sin, cos, radians, degrees, hypot, tan, pi
 import numpy as np
@@ -15,7 +15,8 @@ from configs.config_log import logger
 # Добавление группы для фигуры
 def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     
-        
+       
+
     # Начало координат вида слева на оси симметрии каркаса
     frame_parts_count = int(combined_values["frame_parts_count"])                       # Кол-во частей каркаса                        
     frame_length = int(combined_values["frame_length_mm"])                              # Длина каркаса
@@ -52,6 +53,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     translate_x_main_view = 72
     translate_y_main_view = 60
     scale_view_main_view = 2.5
+    scale_dim_line_main_view = 1
     match frame_parts_count:
         case 1:
             step_lock = 0 # дополнительный шаг для замка
@@ -61,7 +63,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
             step_lock = 1
             add_lock = 0
             scale_view_lock = 1.3
-            translate_y_main_view = 70 # опустить главный вид ниже на 10 чтобы размеры не упирались в рамку
+            translate_y_main_view += 10 # опустить главный вид ниже на 10 чтобы размеры не упирались в рамку
         case 3:
             step_lock = 1
             add_lock = 1
@@ -71,11 +73,11 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     # Задаём параметры вида
     main_view = dwg.g(id='main_view', fill='none', font_family="GOST type A", 
                       font_size=5, stroke_width=0.4, text_anchor='middle', 
-                      transform=f"scale({96/25.4}, {96/25.4}) translate({translate_x_main_view}, {translate_y_main_view}) scale({1/(scale_view_main_view*scale_view_lock)}, {1/(scale_view_main_view*scale_view_lock)})")
+                      transform=f"scale({96/25.4}, {96/25.4}) translate({translate_x_main_view}, {translate_y_main_view}) scale({scale_dim_line_main_view/(scale_view_main_view*scale_view_lock)}, {scale_dim_line_main_view/(scale_view_main_view*scale_view_lock)})")
     # Задаём параметры размерных линий для вида 
     main_view_dim = dwg.g(id='main_view_dim', fill='none', font_family="GOST type A", 
                     font_size=5, stroke_width=0.4, text_anchor='middle', 
-                    transform=f"scale({96/25.4}, {96/25.4}) translate({translate_x_main_view}, {translate_y_main_view}) scale({1/(scale_view_main_view)}, {1/(scale_view_main_view)})")
+                    transform=f"scale({96/25.4}, {96/25.4}) translate({translate_x_main_view}, {translate_y_main_view}) scale({scale_dim_line_main_view/(scale_view_main_view)}, {scale_dim_line_main_view/(scale_view_main_view)})")
 
 
     # Провера есть ли Вентури
@@ -346,9 +348,111 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         Rect(insert=rect_insert, size=rect_size, stroke="white", fill="white").draw(dwg, main_view)
         Rect(insert=(break_x + distansce_lock_on_view, break_y), size=rect_size, stroke="white", fill="white").draw(dwg, main_view) # второй замок
       
+        def build_lock_wire_polyline(
+                    centr_lock_x,
+                    angle,
+                    frame_diameter,
+                    longitudinal_rod_diameter,
+                    overlap_lock,
+                    ring_wire_diameter,
+                    gap,
+                    distance_between_rings,
+                ):
 
+            # Координаты для соединителя "коготь"
+            midline_rod_lock = frame_diameter / 2 - longitudinal_rod_diameter / 2  # средняя линия проволоки замка, положение по y
+            coord_lock_line_start_x = centr_lock_x - (overlap_lock/2 - ring_wire_diameter/2)
+            coord_lock_line_start_y = - midline_rod_lock
+
+            coord_lock_line = []
+
+            # стартовые точки
+            
+            coord_lock_line.append((centr_lock_x -(gap/2 + distance_between_rings + overlap_lock/2), coord_lock_line_start_y * sin(radians(angle))))
+            coord_lock_line.append((coord_lock_line_start_x + 4, (coord_lock_line_start_y + 0) * sin(radians(angle))))
+
+            # --- Дуга 1 ---
+            add_arc_points(
+                coord_list=coord_lock_line,
+                n=15,
+                ang1=90.00,
+                ang2=66.56,
+                cx=coord_lock_line_start_x + 4,
+                cy=coord_lock_line_start_y + 11.50,
+                radius=11.50,
+                angle=angle,
+            )
+
+            coord_lock_line.append((coord_lock_line_start_x + 8.57, (coord_lock_line_start_y + 0.95) * sin(radians(angle))))
+            coord_lock_line.append((coord_lock_line_start_x + 20.81, (coord_lock_line_start_y + 6.25) * sin(radians(angle))))
+
+            # --- Дуга 2 ---
+            add_arc_points(
+                coord_list=coord_lock_line,
+                n=15,
+                ang1=246.56,
+                ang2=329.54,
+                cx=coord_lock_line_start_x + 22,
+                cy=coord_lock_line_start_y + 3.50,
+                radius=3.00,
+                angle=angle,
+            )
+
+            coord_lock_line.append((coord_lock_line_start_x + 24.59, (coord_lock_line_start_y + 5.02) * sin(radians(angle))))
+
+            # --- Дуга 3 ---
+            add_arc_points(
+                coord_list=coord_lock_line,
+                n=15,
+                ang1=149.54,
+                ang2=86.94,
+                cx=coord_lock_line_start_x + 26.31,
+                cy=coord_lock_line_start_y + 6.04,
+                radius=2.00,
+                angle=angle,
+            )
+
+            coord_lock_line.append((coord_lock_line_start_x + 26.42, (coord_lock_line_start_y + 4.04) * sin(radians(angle))))
+
+            # --- Дуга 4 ---
+            add_arc_points(
+                coord_list=coord_lock_line,
+                n=15,
+                ang1=86.94,
+                ang2=45.00,
+                cx=coord_lock_line_start_x + 25,
+                cy=coord_lock_line_start_y + 30.50,
+                radius=26.50,
+                angle=angle,
+            )
+
+            coord_lock_line.append((coord_lock_line_start_x + 43.74, (coord_lock_line_start_y + 11.76) * sin(radians(angle))))
+            coord_lock_line.append((coord_lock_line_start_x + 50.94, (coord_lock_line_start_y + 18.96) * sin(radians(angle))))
+            
+            # ThickPolyline(coord_lock_line, longitudinal_rod_diameter, stroke='black', stroke_width=1, fill='white').draw(dwg, main_view)
+
+            # # Белый прямоугольник поверх существующей геометрии чтобы скрыть место стыка слева
+
+            # patch_width = 5                                                # ширина зоны 
+            # patch_height = longitudinal_rod_diameter - (0.5 * 2)           # высота зоны за минусом ширины линии
+
+            # patch_x = coord_lock_line_start_x - break_width / 2 - patch_width / 2               # координаты для рисования заплатки x
+            # patch_y = coord_lock_line_start_y * sin(radians(angle)) - patch_height / 2              # координаты для рисования заплатки y
+
+            # rect_insert = (patch_x, patch_y)
+            # rect_size = (patch_width, patch_height)
+            # # logger.debug(f"coord_lock_line_start_x = {coord_lock_line_start_x}")
+            # # logger.debug(f"coord_lock_line_start_y = {coord_lock_line_start_y}")
+            # # logger.debug(f"rect_insert = {rect_insert}")
+            # # logger.debug(f"rect_size = {rect_size}")
+
+            # Rect(insert=rect_insert, size=rect_size, stroke="white", fill="white").draw(dwg, main_view) # Заплатка на стык с полукругом на конце ThickPolyline
+            # Line(start=(patch_x - 1, coord_lock_line_start_y * sin(radians(angle)) - longitudinal_rod_diameter/2), end=(patch_x + patch_width + 1, coord_lock_line_start_y * sin(radians(angle)) - longitudinal_rod_diameter/2)).draw(dwg, main_view) # Заплатка на заплатку для линий верх
+            # Line(start=(patch_x - 1, coord_lock_line_start_y * sin(radians(angle)) + longitudinal_rod_diameter/2), end=(patch_x + patch_width + 1, coord_lock_line_start_y * sin(radians(angle)) + longitudinal_rod_diameter/2)).draw(dwg, main_view) # Заплатка на заплатку для линий низ
+            
+            return coord_lock_line
+    
         def add_lock(centr_lock_x):
-
             # Координаты для соединителя "коготь"
             midline_rod_lock = frame_diameter / 2 - longitudinal_rod_diameter / 2  # средняя линия проволоки замка, положение по y
             coord_lock_line_start_x = centr_lock_x - (overlap_lock/2 - ring_wire_diameter/2)
@@ -356,94 +460,12 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
 
             coord_lock_lines = []
             for angle in np.arange(-90, 91, step):
-
-                coord_lock_line = []
-
-                # стартовые точки
                 
-                coord_lock_line.append((centr_lock_x -(gap/2 + distance_between_rings + overlap_lock/2), coord_lock_line_start_y * sin(radians(angle))))
-                coord_lock_line.append((coord_lock_line_start_x + 4, (coord_lock_line_start_y + 0) * sin(radians(angle))))
-
-                # --- Дуга 1 ---
-                add_arc_points(
-                    coord_list=coord_lock_line,
-                    n=15,
-                    ang1=90.00,
-                    ang2=66.56,
-                    cx=coord_lock_line_start_x + 4,
-                    cy=coord_lock_line_start_y + 11.50,
-                    radius=11.50,
-                    angle=angle,
-                )
-
-                coord_lock_line.append((coord_lock_line_start_x + 8.57, (coord_lock_line_start_y + 0.95) * sin(radians(angle))))
-                coord_lock_line.append((coord_lock_line_start_x + 20.81, (coord_lock_line_start_y + 6.25) * sin(radians(angle))))
-
-                # --- Дуга 2 ---
-                add_arc_points(
-                    coord_list=coord_lock_line,
-                    n=15,
-                    ang1=246.56,
-                    ang2=329.54,
-                    cx=coord_lock_line_start_x + 22,
-                    cy=coord_lock_line_start_y + 3.50,
-                    radius=3.00,
-                    angle=angle,
-                )
-
-                coord_lock_line.append((coord_lock_line_start_x + 24.59, (coord_lock_line_start_y + 5.02) * sin(radians(angle))))
-
-                # --- Дуга 3 ---
-                add_arc_points(
-                    coord_list=coord_lock_line,
-                    n=15,
-                    ang1=149.54,
-                    ang2=86.94,
-                    cx=coord_lock_line_start_x + 26.31,
-                    cy=coord_lock_line_start_y + 6.04,
-                    radius=2.00,
-                    angle=angle,
-                )
-
-                coord_lock_line.append((coord_lock_line_start_x + 26.42, (coord_lock_line_start_y + 4.04) * sin(radians(angle))))
-
-                # --- Дуга 4 ---
-                add_arc_points(
-                    coord_list=coord_lock_line,
-                    n=15,
-                    ang1=86.94,
-                    ang2=45.00,
-                    cx=coord_lock_line_start_x + 25,
-                    cy=coord_lock_line_start_y + 30.50,
-                    radius=26.50,
-                    angle=angle,
-                )
-
-                coord_lock_line.append((coord_lock_line_start_x + 43.74, (coord_lock_line_start_y + 11.76) * sin(radians(angle))))
-                coord_lock_line.append((coord_lock_line_start_x + 50.94, (coord_lock_line_start_y + 18.96) * sin(radians(angle))))
-                
-                # ThickPolyline(coord_lock_line, longitudinal_rod_diameter, stroke='black', stroke_width=1, fill='white').draw(dwg, main_view)
-
-                # # Белый прямоугольник поверх существующей геометрии чтобы скрыть место стыка слева
-
-                # patch_width = 5                                                # ширина зоны 
-                # patch_height = longitudinal_rod_diameter - (0.5 * 2)           # высота зоны за минусом ширины линии
-
-                # patch_x = coord_lock_line_start_x - break_width / 2 - patch_width / 2               # координаты для рисования заплатки x
-                # patch_y = coord_lock_line_start_y * sin(radians(angle)) - patch_height / 2              # координаты для рисования заплатки y
-
-                # rect_insert = (patch_x, patch_y)
-                # rect_size = (patch_width, patch_height)
-                # # logger.debug(f"coord_lock_line_start_x = {coord_lock_line_start_x}")
-                # # logger.debug(f"coord_lock_line_start_y = {coord_lock_line_start_y}")
-                # # logger.debug(f"rect_insert = {rect_insert}")
-                # # logger.debug(f"rect_size = {rect_size}")
-
-                # Rect(insert=rect_insert, size=rect_size, stroke="white", fill="white").draw(dwg, main_view) # Заплатка на стык с полукругом на конце ThickPolyline
-                # Line(start=(patch_x - 1, coord_lock_line_start_y * sin(radians(angle)) - longitudinal_rod_diameter/2), end=(patch_x + patch_width + 1, coord_lock_line_start_y * sin(radians(angle)) - longitudinal_rod_diameter/2)).draw(dwg, main_view) # Заплатка на заплатку для линий верх
-                # Line(start=(patch_x - 1, coord_lock_line_start_y * sin(radians(angle)) + longitudinal_rod_diameter/2), end=(patch_x + patch_width + 1, coord_lock_line_start_y * sin(radians(angle)) + longitudinal_rod_diameter/2)).draw(dwg, main_view) # Заплатка на заплатку для линий низ
+                coord_lock_line = build_lock_wire_polyline(centr_lock_x,angle,frame_diameter,longitudinal_rod_diameter,
+                                                           overlap_lock,ring_wire_diameter,gap,distance_between_rings)
 
                 coord_lock_lines += [coord_lock_line] # собираем все прутки замка
+
 
             coord_lock_ring = [((coord_lock_line_start_x + overlap_lock - ring_wire_diameter/2),(coord_lock_line_start_y + 3.50)),((coord_lock_line_start_x + overlap_lock - ring_wire_diameter/2), -(coord_lock_line_start_y + 3.50))] # кольцо замка, рисуем польцо противоплодней части
             
@@ -508,6 +530,26 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         add_lock(centr_lock_x)
         add_lock(centr_lock_x + distansce_lock_on_view)
 
+        # Координаты для выносного элемента Б на главном виде
+        cx_B = centr_lock_x + 30/2
+        cy_B = -ring_midline_diameter/2 + 5
+        cr_B = 35
+        angle_line_B = radians(60) # угол наклона выносной линии(от вертикали)
+        dist1_line_B = 30 # длина наклоной линии
+        dist2_line_B = 20 # длина плочки под букву
+        x1_B = cx_B + cr_B * sin(angle_line_B)
+        y1_B = cy_B - cr_B * cos(angle_line_B)
+        x2_B = x1_B + dist1_line_B * sin(angle_line_B)
+        y2_B = y1_B - dist1_line_B * cos(angle_line_B)
+        x3_B = x2_B + dist2_line_B
+        y3_B = y2_B
+        Circle((cx_B, cy_B), cr_B, stroke_width=1*scale_view_lock, ).draw(dwg, main_view)
+        Polyline([(x1_B,y1_B), (x2_B,y2_B), (x3_B,y3_B)], stroke_dasharray='1,0', stroke_width=1*scale_view_lock).draw(dwg, main_view)
+        Text("Б", (x2_B + dist2_line_B / 2 , (y2_B - 5)), stroke_width=0.01, font_size=15*scale_view_lock).draw(dwg, main_view)
+
+
+
+
     # Осевая линия
     Line((-10,0), (frame_length_on_view + 10, 0), stroke_width=0.4*scale_view_lock, dasharray="14,4,2,4").draw(dwg, main_view) 
 
@@ -546,7 +588,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     ### Рисуем размеры на главном виде
     
     
-    add_arrow_markers(dwg) # Добавляем стрелки
+    
 
     # Длина каркаса
     draw_dimension(dwg, main_view_dim, (0,0), (frame_length_on_view,0), offset=frame_diameter/2 + 75, value=frame_length, 
@@ -640,7 +682,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         # Нахлёст соединения
         draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2, ring_midline_diameter/2), 
                     offset=25, value=overlap_lock,
-                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_start')
+                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
         
         # Длина первой детали
         draw_dimension(dwg, main_view_dim, (0, -ring_midline_diameter/2+20/scale_view_lock), (centr_lock_x+overlap_lock/2+30, -ring_midline_diameter/2+20/scale_view_lock), 
@@ -700,7 +742,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         # Нахлёст соединения
         draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2, ring_midline_diameter/2), 
                     offset=25, value=overlap_lock,
-                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_start')
+                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
         
         # Шаг после кольца
         draw_dimension(dwg, main_view_dim, (centr_lock_x+overlap_lock/2+distansce_lock_on_view, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2+distance_between_rings+distansce_lock_on_view, ring_midline_diameter/2), 
@@ -718,7 +760,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         # Нахлёст соединения
         draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2+distansce_lock_on_view, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2+distansce_lock_on_view, ring_midline_diameter/2), 
                     offset=25, value=overlap_lock,
-                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_start')
+                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
         
         # Длина первой детали
         draw_dimension(dwg, main_view_dim, (0, -ring_midline_diameter/2+20/scale_view_lock), (centr_lock_x+overlap_lock/2+30, -ring_midline_diameter/2+20/scale_view_lock), 
@@ -780,8 +822,6 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
 
 
 
-    dwg.add(main_view)
-    dwg.add(main_view_dim)
 
 
 
@@ -791,55 +831,18 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
 
 
 
-
+    # Координаты вида сечения
+    translate_x_view_1 = 120
+    translate_y_view_1 = 220
+    scale_view_view_1 = 2.5
+    scale_dim_line_view_1 = 2
     # Добавляем вид сечения / Задаём параметры вида
     view_1 = dwg.g(id='view_1', fill='none', font_family="GOST type A", 
                       font_size=5, stroke_width=0.5, text_anchor='middle', dominant_baseline="central", 
-                      transform=f"scale({96/25.4}, {96/25.4}) translate(120, 220) scale({2/2.5}, {2/2.5})")
+                      transform=f"scale({96/25.4}, {96/25.4}) translate({translate_x_view_1}, {translate_y_view_1}) scale({scale_dim_line_view_1/scale_view_view_1}, {scale_dim_line_view_1/scale_view_view_1})")
     
     # Начало координат вида слева на оси симметрии каркаса
-    # Создаем паттерн штриховки
-    hatch1 = HatchPattern(
-        id='hatch30',
-        angle=30,
-        spacing=1.5,
-        stroke='black',
-        stroke_width=0.2 
-    )
-    pattern1 = hatch1.generate(dwg)
-    dwg.defs.add(pattern1)
-
-    hatch2 = HatchPattern(
-        id='hatch120',
-        angle=120,
-        spacing=0.5,
-        stroke='black',
-        stroke_width=0.2 
-    )
-    pattern2 = hatch2.generate(dwg)
-    dwg.defs.add(pattern2) # нужен чтобы сработала строчка по id fill=f"url(#{hatch.id})")
-
-    hatch3 = HatchPattern(
-        id='hatch_1.5',
-        angle=0,
-        spacing=1.5,
-        stroke='black',
-        stroke_width=0.2 
-    )
-    pattern3 = hatch3.generate(dwg)
-    dwg.defs.add(pattern3)
-
-    hatch4 = HatchPattern(
-        id='hatch_0.5',
-        angle=0,
-        spacing=0.5,
-        stroke='black',
-        stroke_width=0.2 
-    )
-    pattern4 = hatch4.generate(dwg)
-    dwg.defs.add(pattern4)
-    
-
+        
     r = ring_diameter/2 + longitudinal_rod_diameter/2 
     # Circle((0,0), ring_diameter/2, stroke_width=0.5, fill="url(#hatch30)").draw(dwg, view_1)
     circle = dwg.circle((0,0), ring_diameter/2, stroke="black", stroke_width=0.5, fill="url(#hatch_1.5)")
@@ -956,10 +959,160 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     
     # Диаметр каркаса
     draw_dimension(dwg, view_1, (0,frame_diameter/2), (0,-frame_diameter/2), offset=frame_diameter/2+20, value=frame_diameter, text_offset=-3,
-                   line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_end', show_diameter_symbol=True)
+                   line_stroke='black', line_width=0.3, font_size=6, scale_dim_line_offset=scale_dim_line_view_1, marker_id='arrow_end', show_diameter_symbol=True)
 
-    dwg.add(view_1)
+    
 
+
+    if frame_parts_count !=1:
+        # Координаты вида Б выносной элемент
+        translate_x_view_2 = 235
+        translate_y_view_2 = 160
+        scale_view_view_2 = 2.5
+        r_view_2 = 50 # средний радиус белого кольца для закрашивания
+        stroke_width_view_2 = 30 # ширина белого кольца для закрашивания
+        scale_dim_line_view_2 = 2
+        def shift_points(points, dx, dy):
+            return [(x + dx, y + dy) for x, y in points]
+        
+        # Добавляем вид Б выносной элемент / Задаём параметры вида
+        view_2 = dwg.g(id='view_2', fill='none', font_family="GOST type A", 
+                        font_size=5, stroke_width=0.5, text_anchor='middle', dominant_baseline="central", 
+                        transform=f"scale({96/25.4}, {96/25.4}) translate({translate_x_view_2}, {translate_y_view_2}) scale({scale_dim_line_view_2/scale_view_view_2}, {scale_dim_line_view_2/scale_view_view_2})")
+        
+
+        coord_lock_wire = build_lock_wire_polyline(centr_lock_x=0, angle=90, frame_diameter=frame_diameter, longitudinal_rod_diameter=longitudinal_rod_diameter,
+                                                    overlap_lock=overlap_lock, ring_wire_diameter=ring_wire_diameter, gap=30, distance_between_rings=0)
+    
+    
+        midline_rod_lock = frame_diameter / 2 - longitudinal_rod_diameter / 2
+        dx = overlap_lock/2
+        dy = -(-midline_rod_lock+ring_wire_diameter/2+longitudinal_rod_diameter/2)
+        coord_lock_wire = shift_points(coord_lock_wire, dx=dx, dy=dy)
+        
+        # рисуем метку центра
+        def mark_center(centr, mark_length, stroke_width, container):
+            cx, cy = centr
+            Line((cx-mark_length/2,cy),(cx+mark_length/2,cy),stroke_width=stroke_width, dasharray="4,1,0.5,1").draw(dwg, container)
+            Line((cx,cy-mark_length/2),(cx,cy+mark_length/2),stroke_width=stroke_width, dasharray="4,1,0.5,1").draw(dwg, container)   
+
+        coord_ring_lock_wire = [(-(overlap_lock/2),-midline_rod_lock+ring_wire_diameter/2+longitudinal_rod_diameter/2 ),
+                                (- (overlap_lock/2),-midline_rod_lock+ring_wire_diameter/2+longitudinal_rod_diameter/2+60)]
+        coord_ring_lock_wire = shift_points(coord_ring_lock_wire, dx=dx, dy=dy)
+
+        ThickPolyline(coord_lock_wire, longitudinal_rod_diameter, stroke='black', stroke_width=0.5, fill='white').draw(dwg, view_2)
+        ThickPolyline(coord_ring_lock_wire, ring_wire_diameter, stroke='black', stroke_width=0.5, fill='white').draw(dwg, view_2)
+        # метка центра отсчёта
+        # mark_center ((0,0), 6, stroke_width=0.1, container=view_2)
+        # Circle((0, 0), 3, stroke_width=0.1, ).draw(dwg, view_2)
+        
+        # центра окружности выносного элемента
+        cx_view_2 = overlap_lock
+        cy_view_2 = 10
+        Circle((cx_view_2, cy_view_2), r_view_2, stroke_width=stroke_width_view_2 , stroke='white' ).draw(dwg, view_2)
+        Circle((cx_view_2, cy_view_2), r_view_2-stroke_width_view_2/2, stroke_width=0.3).draw(dwg, view_2)
+        # Подпись вида    
+        Text("Б (1:1)", (cx_view_2,(cy_view_2-r_view_2+stroke_width_view_2/2-5)), stroke_width=0.01, font_size=8).draw(dwg, view_2)
+        coord_marks_centr = [
+            (ring_wire_diameter/2+4+18,0), # не понял почему надо ещё отнять ring_wire_diameter/2
+            (ring_wire_diameter/2+4,10-ring_wire_diameter/2),
+            (ring_wire_diameter/2+4+18+3,29-ring_wire_diameter/2), ]
+        for i in coord_marks_centr:
+            mark_center(i, 10, stroke_width=0.3, container=view_2)
+
+        # Размеры выносного элемента
+        draw_dimension(dwg, view_2, (0,-ring_wire_diameter/2+29), (0, -ring_wire_diameter/2), 
+                    offset=-30, value=29, text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_end',scale_dim_line_offset=scale_dim_line_view_2)
+        Line((0,-ring_wire_diameter/2+29),(22,-ring_wire_diameter/2+29),stroke_width=0.3,).draw(dwg, view_2)
+        draw_dimension(dwg, view_2, (4,-ring_wire_diameter/2+10), (4, -ring_wire_diameter/2), 
+                    offset=-27, value=10, text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_start', scale_dim_line_offset=scale_dim_line_view_2)
+        
+        draw_dimension(dwg, view_2, (4,-ring_wire_diameter/2+ring_wire_diameter/2), (4, -ring_wire_diameter/2), 
+                    offset=-20, value=" ", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_slash', scale_dim_line_offset=scale_dim_line_view_2)
+        draw_dimension(dwg, view_2, (4,-ring_wire_diameter/2), (4, -ring_wire_diameter/2-longitudinal_rod_diameter), 
+                    offset=-20, value=" ", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_slash', scale_dim_line_offset=scale_dim_line_view_2)
+        Line((0,0),(ring_wire_diameter/2+4+18,0),stroke_width=0.3,).draw(dwg, view_2)
+        Line((-20+4,-ring_wire_diameter/2+8),(-20+4,-ring_wire_diameter/2-(5+10)),stroke_width=0.3,).draw(dwg, view_2)
+        Text(f"Ø", (-20+4-3, -(ring_wire_diameter/2+longitudinal_rod_diameter+5)), stroke_width=0.01, font_size=6, font_family="Arial", rotate=-90).draw(dwg, view_2)
+        Text(f"{longitudinal_rod_diameter}*", (-20+4-3, -(ring_wire_diameter/2+longitudinal_rod_diameter+10)), stroke_width=0.01, font_size=6, rotate=-90).draw(dwg, view_2)
+        Text(f"{int(ring_wire_diameter/2)}", (-20+4-3, -(ring_wire_diameter/2-5)), stroke_width=0.01, font_size=6, rotate=-90).draw(dwg, view_2)
+        
+        draw_dimension(dwg, view_2, (-ring_wire_diameter/2, -ring_wire_diameter/2+29), (ring_wire_diameter/2, -ring_wire_diameter/2+29), 
+                    offset=25, value=" ", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_slash', scale_dim_line_offset=scale_dim_line_view_2)
+        draw_dimension(dwg, view_2, (ring_wire_diameter/2, -ring_wire_diameter/2+29), (ring_wire_diameter/2+4, -ring_wire_diameter/2+29), 
+                    offset=25, value="4", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_slash', scale_dim_line_offset=scale_dim_line_view_2)
+        draw_dimension(dwg, view_2, (ring_wire_diameter/2+4, -ring_wire_diameter/2+29), (ring_wire_diameter/2+4+18, -ring_wire_diameter/2+29), 
+                    offset=25, value="18", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_end', scale_dim_line_offset=scale_dim_line_view_2)
+        draw_dimension(dwg, view_2, (ring_wire_diameter/2+4+18, -ring_wire_diameter/2+29), (ring_wire_diameter/2+4+18+3, -ring_wire_diameter/2+29), 
+                    offset=25, value=" ", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_start', scale_dim_line_offset=scale_dim_line_view_2)
+        Line((-ring_wire_diameter/2-15,-ring_wire_diameter/2+29+25),(ring_wire_diameter/2+4+18+3+15, -ring_wire_diameter/2+29+25),stroke_width=0.3,).draw(dwg, view_2)
+        Text(f"Ø", (-ring_wire_diameter/2-10, -ring_wire_diameter/2+29+25-3), stroke_width=0.01, font_size=6, font_family="Arial", ).draw(dwg, view_2)
+        Text(f"{int(ring_wire_diameter)}*", (-ring_wire_diameter/2-5,-ring_wire_diameter/2+29+25-3), stroke_width=0.01, font_size=6, ).draw(dwg, view_2)
+        Text("3", (ring_wire_diameter/2+4+18+3+8,-ring_wire_diameter/2+29+25-3), stroke_width=0.01, font_size=6, ).draw(dwg, view_2)
+        Line((ring_wire_diameter/2+4,-ring_wire_diameter/2+29),(ring_wire_diameter/2+4, -ring_wire_diameter/2-longitudinal_rod_diameter),stroke_width=0.3,).draw(dwg, view_2)
+        Line((ring_wire_diameter/2+4+18,-ring_wire_diameter/2+29),(ring_wire_diameter/2+4+18, 0),stroke_width=0.3,).draw(dwg, view_2)
+        draw_dimension(dwg, view_2, (ring_wire_diameter/2, -ring_wire_diameter/2+17), (ring_wire_diameter/2+52.5, -ring_wire_diameter/2+17), 
+                    offset=47, value="52", text_offset=-3,
+                    line_stroke='black', line_width=0.3, font_size=6, marker_id='arrow_end', scale_dim_line_offset=scale_dim_line_view_2)
+        def draw_leader_with_text(dwg, container, center, radius, angle_from_vertical_deg, line_length, text, along_offset=0, flip=False):
+            a = radians(angle_from_vertical_deg)
+            k = 1 if not flip else -1
+            line_cx, line_cy = center           
+            # концы линии
+            line_x1 = line_cx + radius * sin(a)
+            line_y1 = line_cy - radius * cos(a)
+            line_x2 = line_x1 + line_length * sin(a) * k
+            line_y2 = line_y1 - line_length * cos(a) * k
+            line_start = (line_x2, line_y2)
+            line_end   = (line_x1, line_y1)
+            # линия со стрелкой
+            arrow_section_line_1 = dwg.line(start=line_start, end=line_end, stroke="black", stroke_width=0.3 )
+            arrow_section_line_1.set_markers((None, None, '#arrow_end'))
+            view_2.add(arrow_section_line_1)
+            # середина
+            mid_x = (line_x1 + line_x2) / 2
+            mid_y = (line_y1 + line_y2) / 2
+            # нормаль (перпендикуляр)
+            n = 1 if angle_from_vertical_deg > 180 else -1
+            nx =  cos(a) * n
+            ny =  sin(a) * n
+
+            tx_dir = sin(a) * k
+            ty_dir = -cos(a) * k
+            offset = 3  # расстояние от линии
+            tx = mid_x + nx * offset - tx_dir * along_offset
+            ty = mid_y + ny * offset - ty_dir * along_offset
+            # угол поворота текста вдоль линии
+            angle_deg = - 90 + angle_from_vertical_deg
+            angle_deg = angle_deg  if angle_from_vertical_deg < 180 else angle_deg - 180
+            Text(text, (tx, ty), stroke_width=0.01, font_size=6, rotate=angle_deg).draw(dwg, container)
+        
+        draw_leader_with_text(dwg, view_2, ((ring_wire_diameter/2 + 4), (-ring_wire_diameter/2 + 10)), 
+                              radius=13, angle_from_vertical_deg=20, line_length=15, text="R13", along_offset=-2)       
+        draw_leader_with_text(dwg, view_2, ((ring_wire_diameter/2 + 4 + 18), 0), 
+                        radius=1.5, angle_from_vertical_deg=150, line_length=13, text="R1,5", along_offset=-2)
+        draw_leader_with_text(dwg, view_2, ((ring_wire_diameter/2 + 4 + 18 + 4.31), (-ring_wire_diameter/2 + 4.54)), 
+                        radius=3.5, angle_from_vertical_deg=340, line_length=15, text="R3,5", along_offset=-2)
+        draw_leader_with_text(dwg, view_2, ((ring_wire_diameter/2 + 4 + 18 + 3), (-ring_wire_diameter/2 + 29)), 
+                        radius=25, angle_from_vertical_deg=45, line_length=25, text="R25", flip=True)
+        
+
+        dwg.add(view_2) # вид Б
+
+    # порядок рисования видов на чертеже
+    dwg.add(main_view)
+    dwg.add(main_view_dim)
+    dwg.add(view_1) # вид A
+    
+    
 def add_hatch_fill(dwg, shape, spacing=5, angle=45, stroke='black', stroke_width=0.5):
     """
     Добавляет штриховку к фигуре (в том числе обёрткам) через clipPath.

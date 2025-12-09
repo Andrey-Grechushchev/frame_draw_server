@@ -13,7 +13,7 @@ from configs.config import (
 )
 
 from drawers.drawer_title_block import draw_title_block  # <-- подключаем новую функцию
-from drawers.drawer_dimenstions import draw_grid, draw_dimension, add_arrow_markers, draw_note # <-- подключаем новую функцию
+from drawers.drawer_dimenstions import draw_grid, draw_dimension, add_arrow_markers, draw_note, add_hatch_patterns # <-- подключаем новую функцию
 from drawers.drawer_table import draw_table
 from drawers.drawer_views import draw_views
 from font_embedder import add_fonts
@@ -121,17 +121,19 @@ def generate_pdf(svg_path=None, pdf_path=None, values=None, disable_svg_debug=Fa
 
         # Добавляем стрелку маркера
         add_arrow_markers(dwg)
+
+        add_hatch_patterns(dwg)
         
         if draw_debug_grid:
             draw_grid(dwg) # размерная сетка
-
+        
+        draw_views(dwg, combined_values)# <-- вызов отдельного модуля для чертёжных видов
+        
         draw_note(dwg) # примечания
         
         draw_title_block(dwg, combined_values, default_values) # <-- вызов отдельного модуля для рамки
 
         draw_table(dwg, combined_values)# <-- вызов отдельного модуля для таблички
-
-        draw_views(dwg, combined_values)# <-- вызов отдельного модуля для чертёжных видов
 
         # Сохраняем SVG файл, если не отключено disable_svg_debug
         # save_svg_if_enabled(dwg, disable_svg_debug, svg_path)

@@ -83,7 +83,7 @@ DEFAULT_MATERIAL = "09Г2С" # Материал -41 09Г2С ГОСТ 10884-94
 
 
 # Паременные для чертежа модели
-DEFAULT_FRAME_PARTS_COUNT = "1"  # Кол-во частей каркаса, шт.
+DEFAULT_FRAME_PARTS_COUNT = "2"  # Кол-во частей каркаса, шт.
 DEFAULT_FRAME_LENGTH_MM = "3000"  # Длина каркаса, мм
 DEFAULT_FRAME_DIAMETER_MM = "110"  # Диаметр каркаса, мм
 DEFAULT_LONGITUDINAL_ROD_DIAMETER_MM = "3"  # Диаметр продольного прутка, мм
@@ -101,11 +101,11 @@ DEFAULT_COATING_TYPE = "Без окраски"  # Тип покрытия
 DEFAULT_HEAD_TYPE = "Раструб" # Тип оголовка
 DEFAULT_BOTTOM_DIAMETER = int(DEFAULT_FRAME_DIAMETER_MM) - 4 # Диаметр донышка
 DEFAULT_BOTTOM_DIAMETER_PRESENCE = "да" # Наличие размера донышка
-DEFAULT_NECK_LENGTH = "220" # Длина оголовка
+DEFAULT_NECK_LENGTH = "230" # Длина оголовка
 DEFAULT_NECK_LENGTH_PRESENCE = "да"
-DEFAULT_DISTANCE_BETWEEN_RINGS = "193" # Расстояние между кольцами
+DEFAULT_DISTANCE_BETWEEN_RINGS = "207" # Расстояние между кольцами
 DEFAULT_DISTANCE_BETWEEN_RINGS_PRESENCE = "нет" 
-DEFAULT_LAST_RING_TO_BOTTOM_LENGTH = "78"
+DEFAULT_LAST_RING_TO_BOTTOM_LENGTH = "79"
 DEFAULT_LAST_RING_TO_BOTTOM_LENGTH_PRESENCE = "нет"
 
 
