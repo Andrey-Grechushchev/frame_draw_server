@@ -1,18 +1,29 @@
 # run.py
 
-from app.server import app
+import os
+import sys
+
+# Гарантируем, что корень проекта есть в sys.path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
 from configs.config_log import logger
+from app.server import app
+
 
 # === Глобальный обработчик ошибок ===
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Если это "нормальная" HTTP-ошибка (404, 405 и т.п.) — отдать её как есть
+    """
+    Логируем все неожиданные исключения.
+    HTTP-исключения (404, 405 и т.п.) отдаём как есть.
+    """
     if isinstance(e, HTTPException):
         return e
 
-    # А всё остальное логируем как реально неожиданные ошибки
     logger.exception("Unhandled exception:")
     response = {
         "error": str(e),
@@ -24,5 +35,7 @@ def handle_exception(e):
 # === Точка входа ===
 if __name__ == "__main__":
     logger.info("Starting Flask server...")
-    # debug=True удобно для разработки; для продакшена выставить debug=False
+    # Для отладки можно посмотреть версию Python
+    print(sys.version)
     app.run(host="0.0.0.0", port=5000, debug=False)
+

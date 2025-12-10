@@ -17,7 +17,7 @@ SAVE_AS_PDF = True
 SAVE_WITHOUT_GUI = False
 
 # Настройки логирования
-LOG_FILE = "app.log"
+LOG_FILE = "logs/app.log"
 LOG_LEVEL = 10 if DEBUG else 20 # будут отображаться только те сообщения, которые равны или выше этого уровня.
 # logging.debug("Отладочная информация")        10
 # logging.info("Операция выполнена успешно")    20

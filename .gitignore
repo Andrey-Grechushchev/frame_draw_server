@@ -19,7 +19,7 @@ build_archives/
 Чертежи на каркасы*/
 
 # ===== Логи и временные файлы =====
-app.log
+logs/app.log
 templates/app.log
 pyarmor.bug.log
 tree.txt
