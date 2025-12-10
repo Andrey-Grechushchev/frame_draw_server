@@ -92,7 +92,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     neck_ring_midline_diameter = neck_ring_diameter_diff_mm + ring_midline_diameter     # Диаметр кольца горловины по средней линии
     
     gap = 100               # разрыв на чертеже, расстояние между кольцами на виде с разрывами
-
+    lock_bend = 15.4        # насколько загнут кончек проволки в замке
     distansce_lock_on_view = add_lock*(overlap_lock+(step_lock+1)*distance_between_rings+gap) # Расстояние между замками на виде
     
     last_ring_on_view = (ring_wire_diameter/2 + neck_length + gap + distance_between_rings*(step_lock+1) + step_lock*overlap_lock + gap +
@@ -682,24 +682,26 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         # Нахлёст соединения
         draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2, ring_midline_diameter/2), 
                     offset=25, value=overlap_lock,
-                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
+                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_start')
         
         # Длина первой детали
-        draw_dimension(dwg, main_view_dim, (0, -ring_midline_diameter/2+20/scale_view_lock), (centr_lock_x+overlap_lock/2+30, -ring_midline_diameter/2+20/scale_view_lock), 
-                    offset=-(20/scale_view_lock+50), value=frame_length_1, 
+        draw_dimension(dwg, main_view_dim, (0, -ring_midline_diameter/2+lock_bend), (centr_lock_x+overlap_lock/2+30, -ring_midline_diameter/2+lock_bend), 
+                    offset=-(lock_bend+70)/scale_view_lock, value=frame_length_1, 
                     scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
+        
         # Перекрытие для размерных линий
         size_x = float(4)
         size_y = float(4)
         rect_size = (size_x, size_y)
         insert_x = ((centr_lock_x+overlap_lock/2+30)- size_x/2)/scale_view_lock
-        insert_y = (-ring_midline_diameter/2+20/scale_view_lock)-(20/scale_view_lock+40) + size_y/2 + 4 # Тонкая подгонка, непонятно почему чистые размеры не попали точно
+        insert_y = ((-ring_midline_diameter/2+lock_bend)-(lock_bend+55))/scale_view_lock - size_y/2
         rect_insert = (insert_x, insert_y)
+        
         Rect(insert=rect_insert, size=rect_size, stroke="white", fill="white").draw(dwg, main_view_dim) # white
-
+        
         # Длина второй детали
-        draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2-30, -ring_midline_diameter/2+20/scale_view_lock), (frame_length_on_view, -ring_midline_diameter/2+20/scale_view_lock), 
-                    offset=-(20/scale_view_lock+40), value=frame_length_2, 
+        draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2-30, -ring_midline_diameter/2+lock_bend), (frame_length_on_view, -ring_midline_diameter/2+lock_bend), 
+                    offset=-(lock_bend+55)/scale_view_lock, value=frame_length_2, 
                     scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end') 
 
     if frame_parts_count == 3:
@@ -742,7 +744,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         # Нахлёст соединения
         draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2, ring_midline_diameter/2), 
                     offset=25, value=overlap_lock,
-                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
+                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_start')
         
         # Шаг после кольца
         draw_dimension(dwg, main_view_dim, (centr_lock_x+overlap_lock/2+distansce_lock_on_view, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2+distance_between_rings+distansce_lock_on_view, ring_midline_diameter/2), 
@@ -760,24 +762,24 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         # Нахлёст соединения
         draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2+distansce_lock_on_view, ring_midline_diameter/2), (centr_lock_x+overlap_lock/2+distansce_lock_on_view, ring_midline_diameter/2), 
                     offset=25, value=overlap_lock,
-                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
+                    scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_start')
         
         # Длина первой детали
-        draw_dimension(dwg, main_view_dim, (0, -ring_midline_diameter/2+20/scale_view_lock), (centr_lock_x+overlap_lock/2+30, -ring_midline_diameter/2+20/scale_view_lock), 
-                    offset=-(20/scale_view_lock+50), value=frame_length_1, 
+        draw_dimension(dwg, main_view_dim, (0, -ring_midline_diameter/2+lock_bend), (centr_lock_x+overlap_lock/2+30, -ring_midline_diameter/2+lock_bend), 
+                    offset=-(lock_bend+100)/scale_view_lock, value=frame_length_1, 
                     scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')
         
         # Длина третьей детали
-        draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2-30+distansce_lock_on_view, -ring_midline_diameter/2+20/scale_view_lock), (frame_length_on_view, -ring_midline_diameter/2+20/scale_view_lock), 
-                    offset=-(20/scale_view_lock+50), value=frame_length_3, 
+        draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2-30+distansce_lock_on_view, -ring_midline_diameter/2+lock_bend), (frame_length_on_view, -ring_midline_diameter/2+lock_bend), 
+                    offset=-(lock_bend+100)/scale_view_lock, value=frame_length_3, 
                     scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end')       
-        
+
         # Перекрытие для размерных линий
         size_x = float(4)
         size_y = float(4)
         rect_size = (size_x, size_y)
         insert_x = ((centr_lock_x+overlap_lock/2+30)- size_x/2)/scale_view_lock
-        insert_y = (-ring_midline_diameter/2+20/scale_view_lock)-(20/scale_view_lock+40) + size_y/2 + 16 # Тонкая подгонка, непонятно почему чистые размеры не попали точно
+        insert_y = ((-ring_midline_diameter/2+lock_bend)-(lock_bend+80))/scale_view_lock - size_y/2
         rect_insert = (insert_x, insert_y)
         Rect(insert=rect_insert, size=rect_size, stroke="white", fill="white").draw(dwg, main_view_dim) # white
 
@@ -786,13 +788,13 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         size_y = float(4)
         rect_size = (size_x, size_y)
         insert_x = ((centr_lock_x-overlap_lock/2-30+distansce_lock_on_view)- size_x/2)/scale_view_lock
-        insert_y = (-ring_midline_diameter/2+20/scale_view_lock)-(20/scale_view_lock+40) + size_y/2 + 16 # Тонкая подгонка, непонятно почему чистые размеры не попали точно
+        insert_y = ((-ring_midline_diameter/2+lock_bend)-(lock_bend+80))/scale_view_lock - size_y/2
         rect_insert = (insert_x, insert_y)
         Rect(insert=rect_insert, size=rect_size, stroke="white", fill="white").draw(dwg, main_view_dim) # white
 
         # Длина второй детали
-        draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2-30, -ring_midline_diameter/2+20/scale_view_lock), (centr_lock_x+overlap_lock/2+30+distansce_lock_on_view, -ring_midline_diameter/2+20/scale_view_lock), 
-                    offset=-(20/scale_view_lock+40), value=frame_length_2, 
+        draw_dimension(dwg, main_view_dim, (centr_lock_x-overlap_lock/2-30, -ring_midline_diameter/2+lock_bend), (centr_lock_x+overlap_lock/2+30+distansce_lock_on_view, -ring_midline_diameter/2+lock_bend), 
+                    offset=-(lock_bend+80)/scale_view_lock, value=frame_length_2, 
                     scale_dim=scale_view_lock, line_stroke='black', line_width=0.6, font_size=12, marker_id='arrow_end') 
 
     #  Пишем предупреждение о том, что проверка длины каркаса не прошла
@@ -967,7 +969,7 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
     if frame_parts_count !=1:
         # Координаты вида Б выносной элемент
         translate_x_view_2 = 235
-        translate_y_view_2 = 160
+        translate_y_view_2 = 163
         scale_view_view_2 = 2.5
         r_view_2 = 50 # средний радиус белого кольца для закрашивания
         stroke_width_view_2 = 30 # ширина белого кольца для закрашивания
@@ -1012,7 +1014,8 @@ def draw_views(dwg: svgwrite.Drawing, combined_values: dict):
         Circle((cx_view_2, cy_view_2), r_view_2, stroke_width=stroke_width_view_2 , stroke='white' ).draw(dwg, view_2)
         Circle((cx_view_2, cy_view_2), r_view_2-stroke_width_view_2/2, stroke_width=0.3).draw(dwg, view_2)
         # Подпись вида    
-        Text("Б (1:1)", (cx_view_2,(cy_view_2-r_view_2+stroke_width_view_2/2-5)), stroke_width=0.01, font_size=8).draw(dwg, view_2)
+        Text("Б (1:1)", (cx_view_2,(cy_view_2-r_view_2+stroke_width_view_2/2-10)), stroke_width=0.01, font_size=8).draw(dwg, view_2)
+        Text("типовое", (cx_view_2,(cy_view_2-r_view_2+stroke_width_view_2/2-4)), stroke_width=0.01, font_size=6).draw(dwg, view_2)
         coord_marks_centr = [
             (ring_wire_diameter/2+4+18,0), # не понял почему надо ещё отнять ring_wire_diameter/2
             (ring_wire_diameter/2+4,10-ring_wire_diameter/2),

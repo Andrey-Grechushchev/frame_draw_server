@@ -83,7 +83,7 @@ DEFAULT_MATERIAL = "09Г2С" # Материал -41 09Г2С ГОСТ 10884-94
 
 
 # Паременные для чертежа модели
-DEFAULT_FRAME_PARTS_COUNT = "2"  # Кол-во частей каркаса, шт.
+DEFAULT_FRAME_PARTS_COUNT = "1"  # Кол-во частей каркаса, шт.
 DEFAULT_FRAME_LENGTH_MM = "3000"  # Длина каркаса, мм
 DEFAULT_FRAME_DIAMETER_MM = "110"  # Диаметр каркаса, мм
 DEFAULT_LONGITUDINAL_ROD_DIAMETER_MM = "3"  # Диаметр продольного прутка, мм
