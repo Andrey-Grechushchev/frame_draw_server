@@ -39,6 +39,7 @@ from generate_drawing import generate_pdf
 from configs.config import DEFAULT_FILENAME, checkbox_fields
 from configs.config_log import logger
 from dotenv import load_dotenv
+import ipaddress
 
 load_dotenv()
 
@@ -50,8 +51,31 @@ app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 CORS(app)
 
 # Конфигурация
-# По умолчанию используем тот же токен, что и в форме, чтобы dev-окружение работало без .env
-SECRET_TOKEN = os.getenv("SECRET_TOKEN", "secure_token_Aspex")
+
+SECRET_TOKEN = os.getenv("SECRET_TOKEN", "")
+
+
+# Белый список IP, которым разрешён доступ к сервису.
+# Формат переменной окружения ALLOWED_IPS:
+# "127.0.0.1,31.207.75.93,10.0.0.0/24"
+ALLOWED_IPS_RAW = os.getenv("ALLOWED_IPS", "").strip()
+ALLOWED_NETWORKS = []
+
+if ALLOWED_IPS_RAW:
+    for part in ALLOWED_IPS_RAW.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            # Если в записи есть "/", считаем это подсетью (CIDR),
+            # иначе интерпретируем как одиночный адрес /32
+            if "/" in part:
+                net = ipaddress.ip_network(part, strict=False)
+            else:
+                net = ipaddress.ip_network(part + "/32", strict=False)
+            ALLOWED_NETWORKS.append(net)
+        except ValueError:
+            logger.error(f"Некорректная запись в ALLOWED_IPS: {part}")
 
 
 def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, draw_debug_grid):
@@ -85,6 +109,61 @@ def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, d
     process.join()
     # logger.debug(f"Процесс завершился с кодом: {process.exitcode}")
     return queue.get()
+
+
+def get_client_ip() -> str:
+    """
+    Определяет IP клиента.
+    Если сервис будет стоять за reverse-proxy (Nginx/Apache),
+    можно использовать заголовок X-Forwarded-For.
+    Сейчас берём первый IP из X-Forwarded-For (если есть),
+    иначе стандартный request.remote_addr.
+    """
+    forwarded_for = request.headers.get("X-Forwarded-For", "")
+    if forwarded_for:
+        # формат: "ip1, ip2, ip3" -> берём первый
+        ip = forwarded_for.split(",")[0].strip()
+        return ip
+
+    return request.remote_addr or "0.0.0.0"
+
+
+def is_ip_allowed(ip: str) -> bool:
+    """
+    Проверяет, разрешён ли IP.
+    Если ALLOWED_NETWORKS пуст — считаем, что ограничений нет.
+    """
+    if not ALLOWED_NETWORKS:
+        # Белый список не задан — пропускаем всех
+        return True
+
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        # Невалидный IP — считаем, что ему доступ запрещён
+        return False
+
+    for net in ALLOWED_NETWORKS:
+        if addr in net:
+            return True
+
+    return False
+
+
+@app.before_request
+def limit_remote_addr():
+    """
+    Глобальный фильтр запросов: ограничение по IP.
+    Применяем только к "боевым" эндпоинтам: index и generate_pdf_route.
+    Остальное (static, health-check и т.п.) не трогаем.
+    """
+    # request.endpoint = имя view-функции ("index", "generate_pdf_route", "static", ...)
+    if request.endpoint in ("index", "generate_pdf_route"):
+        client_ip = get_client_ip()
+        if not is_ip_allowed(client_ip):
+            logger.warning(f"Доступ запрещён для IP: {client_ip}")
+            return jsonify({"error": "Forbidden: IP not allowed"}), 403
+
 
 
 @app.route("/", methods=["GET"])
