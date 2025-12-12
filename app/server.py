@@ -62,20 +62,25 @@ ALLOWED_IPS_RAW = os.getenv("ALLOWED_IPS", "").strip()
 ALLOWED_NETWORKS = []
 
 if ALLOWED_IPS_RAW:
-    for part in ALLOWED_IPS_RAW.split(","):
-        part = part.strip()
-        if not part:
-            continue
-        try:
-            # Если в записи есть "/", считаем это подсетью (CIDR),
-            # иначе интерпретируем как одиночный адрес /32
-            if "/" in part:
-                net = ipaddress.ip_network(part, strict=False)
-            else:
-                net = ipaddress.ip_network(part + "/32", strict=False)
-            ALLOWED_NETWORKS.append(net)
-        except ValueError:
-            logger.error(f"Некорректная запись в ALLOWED_IPS: {part}")
+    # Явный режим "всех пускаем"
+    if ALLOWED_IPS_RAW == "*":
+        ALLOW_ALL_IPS = True
+        logger.info("IP-фильтрация отключена: ALLOWED_IPS='*' — разрешены все IP.")
+    else:
+        for part in ALLOWED_IPS_RAW.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                # Если в записи есть "/", считаем это подсетью (CIDR),
+                # иначе интерпретируем как одиночный адрес /32
+                if "/" in part:
+                    net = ipaddress.ip_network(part, strict=False)
+                else:
+                    net = ipaddress.ip_network(part + "/32", strict=False)
+                ALLOWED_NETWORKS.append(net)
+            except ValueError:
+                logger.error(f"Некорректная запись в ALLOWED_IPS: {part}")
 
 
 def generate_pdf_safe(svg_path, pdf_path, values, disable_svg_debug, save_pdf, draw_debug_grid):
@@ -131,8 +136,15 @@ def get_client_ip() -> str:
 def is_ip_allowed(ip: str) -> bool:
     """
     Проверяет, разрешён ли IP.
-    Если ALLOWED_NETWORKS пуст — считаем, что ограничений нет.
+
+    Логика:
+    - Если ALLOW_ALL_IPS=True  -> всегда True (проверка отключена явно через "*").
+    - Если ALLOWED_NETWORKS пуст -> считаем, что ограничений нет (поведение по умолчанию).
+    - Иначе проверяем, попадает ли IP в одну из подсетей.
     """
+    if ALLOW_ALL_IPS:
+        return True
+
     if not ALLOWED_NETWORKS:
         # Белый список не задан — пропускаем всех
         return True
@@ -148,6 +160,7 @@ def is_ip_allowed(ip: str) -> bool:
             return True
 
     return False
+
 
 
 @app.before_request
