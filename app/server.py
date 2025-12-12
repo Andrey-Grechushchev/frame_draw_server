@@ -59,12 +59,12 @@ SECRET_TOKEN = os.getenv("SECRET_TOKEN", "")
 # Формат переменной окружения ALLOWED_IPS:
 # "127.0.0.1,31.207.75.93,10.0.0.0/24"
 ALLOWED_IPS_RAW = os.getenv("ALLOWED_IPS", "").strip()
+ALLOW_ALL_IPS = False
 ALLOWED_NETWORKS = []
 
 if ALLOWED_IPS_RAW:
     # Явный режим "всех пускаем"
     if ALLOWED_IPS_RAW == "*":
-        ALLOW_ALL_IPS = True
         logger.info("IP-фильтрация отключена: ALLOWED_IPS='*' — разрешены все IP.")
     else:
         for part in ALLOWED_IPS_RAW.split(","):
