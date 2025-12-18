@@ -6,8 +6,8 @@ BASE_DIR="/home/aspex/frame_draw_server"
 DOWNLOAD_DIR="$BASE_DIR/static/downloads"
 
 # --- Параметры политики хранения ---
-RETENTION_DAYS=90      # сколько дней хранить (по дате каталога/mtime)
-MAX_SIZE_GB=10         # максимальный общий объём static/downloads
+RETENTION_DAYS=3650      # (90)сколько дней хранить (по дате каталога/mtime)
+MAX_SIZE_GB=1024         # (10)максимальный общий объём static/downloads
 
 # --- Проверка, что каталог существует ---
 if [ ! -d "$DOWNLOAD_DIR" ]; then
